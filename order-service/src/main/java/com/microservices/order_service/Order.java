@@ -11,25 +11,34 @@ public class Order {
     private Long id;
 
     private Long restaurantId;
+    private String restaurantName;
+
+    private String foodItem;
+
     private String customerName;
     private String customerPhone;
     private String deliveryAddress;
-    private String foodItem;
+
     private int quantity;
     private double totalPrice;
     private String status;
 
-    public Order() {}
+
+    // getters & setters
 
 
 
-    public Long getId()
-    { return id; }
-    public void setId(Long id)
-    { this.id = id; }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
     public Long getRestaurantId() { return restaurantId; }
     public void setRestaurantId(Long restaurantId) { this.restaurantId = restaurantId; }
+
+    public String getRestaurantName() { return restaurantName; }
+    public void setRestaurantName(String restaurantName) { this.restaurantName = restaurantName; }
+
+    public String getFoodItem() { return foodItem; }
+    public void setFoodItem(String foodItem) { this.foodItem = foodItem; }
 
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
@@ -40,9 +49,6 @@ public class Order {
     public String getDeliveryAddress() { return deliveryAddress; }
     public void setDeliveryAddress(String deliveryAddress) { this.deliveryAddress = deliveryAddress; }
 
-    public String getFoodItem() { return foodItem; }
-    public void setFoodItem(String foodItem) { this.foodItem = foodItem; }
-
     public int getQuantity() { return quantity; }
     public void setQuantity(int quantity) { this.quantity = quantity; }
 
@@ -51,5 +57,4 @@ public class Order {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-
 }
