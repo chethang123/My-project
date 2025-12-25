@@ -8,7 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/orders")
-//@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200")
 public class OrderController {
 
     private final OrderService orderService;
@@ -22,7 +22,8 @@ public class OrderController {
     // ✅ CREATE ORDER AND SEND KAFKA EVENT
     @PostMapping("/create")
     public Order create(@RequestBody Order order) {
-        order.setStatus("PAID");
+        order.setStatus("PAYMENT_INITIATED");
+
         Order savedOrder = orderService.createOrder(order);
 
         // Build Kafka event

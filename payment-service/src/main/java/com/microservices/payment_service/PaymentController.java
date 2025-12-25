@@ -7,7 +7,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/payments")
-//@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "http://localhost:4200")
 public class PaymentController {
 
     private final PaymentService paymentService;

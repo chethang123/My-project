@@ -3,6 +3,8 @@ package com.microservices.payment_service;
 import com.microservices.payment_service.PaymentService;
 import com.microservices.payment_service.Payment;
 import com.microservices.payment_service.PaymentRepository;
+import com.microservices.payment_service.kafka.PaymentEvent;
+import com.microservices.payment_service.kafka.PaymentEventProducer;
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import org.json.JSONObject;
@@ -24,18 +26,21 @@ public class PaymentServiceImpl implements PaymentService {
     private String secret;
 
     private final PaymentRepository paymentRepository;
+    private final PaymentEventProducer paymentEventProducer;
 
-    public PaymentServiceImpl(PaymentRepository paymentRepository) {
+    public PaymentServiceImpl(
+            PaymentRepository paymentRepository,
+            PaymentEventProducer paymentEventProducer) {
         this.paymentRepository = paymentRepository;
+        this.paymentEventProducer = paymentEventProducer;
     }
 
     @Override
     public Map<String, Object> createRazorpayOrder(int amount) throws Exception {
-
         RazorpayClient client = new RazorpayClient(key, secret);
 
         JSONObject options = new JSONObject();
-        options.put("amount", amount * 100); // ✅ PAISE (FIX)
+        options.put("amount", amount * 100);
         options.put("currency", "INR");
         options.put("receipt", "txn_" + System.currentTimeMillis());
 
@@ -54,7 +59,6 @@ public class PaymentServiceImpl implements PaymentService {
         return response;
     }
 
-
     @Override
     public boolean verifyPayment(Map<String, String> data) {
         try {
@@ -68,14 +72,24 @@ public class PaymentServiceImpl implements PaymentService {
             byte[] digest = mac.doFinal(payload.getBytes());
             String generatedSignature = bytesToHex(digest);
 
-            boolean success = generatedSignature
-                    .equals(data.get("razorpay_signature"));
+            boolean success =
+                    generatedSignature.equals(data.get("razorpay_signature"));
 
             if (success) {
                 Payment payment = paymentRepository
                         .findByOrderId(data.get("razorpay_order_id"));
+
                 payment.setStatus("SUCCESS");
                 paymentRepository.save(payment);
+
+                // 🔥 PUBLISH PAYMENT EVENT
+                PaymentEvent event = new PaymentEvent();
+                event.setOrderId(payment.getOrderId());
+                event.setAmount(payment.getAmount());
+                event.setPaymentId(data.get("razorpay_payment_id"));
+                event.setStatus("SUCCESS");
+
+                paymentEventProducer.publishPaymentEvent(event);
             }
 
             return success;
