@@ -1,23 +1,21 @@
 package com.microservices.payment_service;
 
-import com.microservices.payment_service.PaymentService;
-import com.microservices.payment_service.Payment;
-import com.microservices.payment_service.PaymentRepository;
-import com.microservices.payment_service.kafka.PaymentEvent;
 import com.microservices.payment_service.kafka.PaymentEventProducer;
 import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
 public class PaymentServiceImpl implements PaymentService {
+
+    private final PaymentRepository paymentRepository;
+    private final PaymentEventProducer paymentEventProducer;
 
     @Value("${razorpay.key}")
     private String key;
@@ -25,22 +23,19 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${razorpay.secret}")
     private String secret;
 
-    private final PaymentRepository paymentRepository;
-    private final PaymentEventProducer paymentEventProducer;
-
-    public PaymentServiceImpl(
-            PaymentRepository paymentRepository,
-            PaymentEventProducer paymentEventProducer) {
+    @Autowired
+    public PaymentServiceImpl(PaymentRepository paymentRepository,
+                              PaymentEventProducer paymentEventProducer) {
         this.paymentRepository = paymentRepository;
         this.paymentEventProducer = paymentEventProducer;
     }
 
     @Override
-    public Map<String, Object> createRazorpayOrder(int amount) throws Exception {
+    public Map<String, Object> createOrder(int amount, Long userId, Long productId, int quantity) throws Exception {
         RazorpayClient client = new RazorpayClient(key, secret);
 
         JSONObject options = new JSONObject();
-        options.put("amount", amount * 100);
+        options.put("amount", amount * 100); // paise
         options.put("currency", "INR");
         options.put("receipt", "txn_" + System.currentTimeMillis());
 
@@ -48,65 +43,35 @@ public class PaymentServiceImpl implements PaymentService {
 
         Payment payment = new Payment();
         payment.setOrderId(order.get("id"));
-        payment.setAmount(amount);
+        payment.setUserId(userId);
+        payment.setProductId(productId);
+        payment.setQuantity(quantity);
+        payment.setTotalPrice(amount);
         payment.setStatus("CREATED");
+        payment.setAmount(amount);
+        payment.setTotalPrice(amount);
+
         paymentRepository.save(payment);
 
-        Map<String, Object> response = new HashMap<>();
-        response.put("orderId", order.get("id"));
-        response.put("amount", amount);
+        // Publish Kafka event
+        paymentEventProducer.publishPaymentEvent(payment);
 
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", order.get("id"));
+        response.put("amount", order.get("amount"));
+        response.put("currency", order.get("currency"));
         return response;
     }
 
     @Override
-    public boolean verifyPayment(Map<String, String> data) {
-        try {
-            String payload =
-                    data.get("razorpay_order_id") + "|" +
-                            data.get("razorpay_payment_id");
-
-            Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret.getBytes(), "HmacSHA256"));
-
-            byte[] digest = mac.doFinal(payload.getBytes());
-            String generatedSignature = bytesToHex(digest);
-
-            boolean success =
-                    generatedSignature.equals(data.get("razorpay_signature"));
-
-            if (success) {
-                Payment payment = paymentRepository
-                        .findByOrderId(data.get("razorpay_order_id"));
-
-                payment.setStatus("SUCCESS");
-                paymentRepository.save(payment);
-
-                // 🔥 PUBLISH PAYMENT EVENT
-                PaymentEvent event = new PaymentEvent();
-                event.setOrderId(payment.getOrderId());
-                event.setAmount(payment.getAmount());
-                event.setPaymentId(data.get("razorpay_payment_id"));
-                event.setStatus("SUCCESS");
-
-                paymentEventProducer.publishPaymentEvent(event);
-            }
-
-            return success;
-
-        } catch (Exception e) {
-            return false;
-        }
+    public Map<String, Object> createRazorpayOrder(int amount) throws Exception {
+        // Optional: you can implement a simpler method if you just need amount
+        return createOrder(amount, 1L, 1L, 1); // example default values
     }
 
-    private String bytesToHex(byte[] hash) {
-        StringBuilder hexString = new StringBuilder();
-        for (byte b : hash) {
-            String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1)
-                hexString.append('0');
-            hexString.append(hex);
-        }
-        return hexString.toString();
+    @Override
+    public boolean verifyPayment(Map<String, String> data) {
+        // Implement Razorpay signature verification here
+        return false;
     }
 }

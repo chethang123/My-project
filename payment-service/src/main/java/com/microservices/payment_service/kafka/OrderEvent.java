@@ -2,42 +2,29 @@ package com.microservices.payment_service.kafka;
 
 public class OrderEvent {
 
-    private Long orderId;
-    private String restaurantName;
-    private Double amount;
+    private String orderId; // <-- change Long to String
+    private Long userId;
+    private Long productId;
+    private int quantity;
+    private double totalPrice;
     private String status;
 
-    public OrderEvent() {}
+    // getters & setters
+    public String getOrderId() { return orderId; }
+    public void setOrderId(String orderId) { this.orderId = orderId; }
 
-    public Long getOrderId() {
-        return orderId;
-    }
+    public Long getUserId() { return userId; }
+    public void setUserId(Long userId) { this.userId = userId; }
 
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
 
-    public String getRestaurantName() {
-        return restaurantName;
-    }
+    public int getQuantity() { return quantity; }
+    public void setQuantity(int quantity) { this.quantity = quantity; }
 
-    public void setRestaurantName(String restaurantName) {
-        this.restaurantName = restaurantName;
-    }
+    public double getTotalPrice() { return totalPrice; }
+    public void setTotalPrice(double totalPrice) { this.totalPrice = totalPrice; }
 
-    public Double getAmount() {
-        return amount;
-    }
-
-    public void setAmount(Double amount) {
-        this.amount = amount;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
 }

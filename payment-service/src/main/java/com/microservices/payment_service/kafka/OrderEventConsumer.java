@@ -16,23 +16,22 @@ public class OrderEventConsumer {
 
     @KafkaListener(
             topics = "ordertopic1",
-            groupId = "payment-service-group-v6",
+            groupId = "payment-service-group",
             containerFactory = "kafkaListenerContainerFactory"
     )
     public void consume(OrderEvent event) {
-
-        System.out.println("✅ Order received from Kafka");
-        System.out.println("Order ID: " + event.getOrderId());
-        System.out.println("Amount: " + event.getAmount());
+        System.out.println("✅ Order received from Kafka: " + event.getOrderId());
 
         Payment payment = new Payment();
-        payment.setOrderId(event.getOrderId().toString());
-        payment.setAmount(event.getAmount());
+        payment.setOrderId(event.getOrderId());
+        payment.setUserId(event.getUserId());
+        payment.setProductId(event.getProductId());
+        payment.setQuantity(event.getQuantity());
+        payment.setTotalPrice(event.getTotalPrice());
         payment.setStatus("PAYMENT_PENDING");
 
         paymentRepository.save(payment);
 
-        System.out.println("💾 Payment saved in DB");
+        System.out.println("💾 Payment saved for Order ID: " + event.getOrderId());
     }
-
 }

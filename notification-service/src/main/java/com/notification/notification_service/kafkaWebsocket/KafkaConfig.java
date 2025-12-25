@@ -1,41 +1,33 @@
-package com.microservices.payment_service.kafka;
+package com.notification.notification_service.kafkaWebsocket;
+
+
 
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.LongSerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
-public class KafkaProducerConfig {
+public class KafkaConfig {
 
     @Bean
-    public ProducerFactory<String, PaymentEvent> producerFactory() {
+    public ProducerFactory<String, Long> producerFactory() {
         Map<String, Object> configProps = new HashMap<>();
         configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "pkc-619z3.us-east1.gcp.confluent.cloud:9092");
         configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
-        configProps.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
-
-        // Confluent Cloud security
-        configProps.put("security.protocol", "SASL_SSL");
-        configProps.put("sasl.mechanism", "PLAIN");
-        configProps.put("sasl.jaas.config",
-                "org.apache.kafka.common.security.plain.PlainLoginModule required " +
-                        "username='VXVGOHJ5C5UWZZZN' " +
-                        "password='cfltZtJ3ma0KKm/wpsbJlQNo6za7vUyveWA8Cksh4EmJ7AuaefepnQbiaRVJvY1A';");
-
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, LongSerializer.class);
         return new DefaultKafkaProducerFactory<>(configProps);
     }
 
     @Bean
-    public KafkaTemplate<String, PaymentEvent> kafkaTemplate() {
+    public KafkaTemplate<String, Long> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 }
